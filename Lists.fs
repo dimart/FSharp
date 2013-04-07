@@ -1,5 +1,3 @@
-open System
-
 let rec addToEnd e list =
     match list with
     | head::tail -> head :: addToEnd e tail
