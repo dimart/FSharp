@@ -1,10 +1,10 @@
 // Problem 4
 // Find the largest palindrome made from the product of two 3-digit numbers.
 
-let isPalindrome (x : int) = 
+let isPalindrome (x:int) = 
    let mutable ret = true
    let s = System.Convert.ToString x 
-   for i = 0  to s.Length/2 do
+   for i = 0  to s.Length / 2 do
      if s.[i] <> s.[s.Length-i-1] then 
        ret <- false
    ret
