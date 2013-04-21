@@ -1,3 +1,10 @@
+(*
+ * Project: Lists
+ * Author: dimart
+ *)
+ 
+open System
+
 let rec addToEnd e list =
     match list with
     | head::tail -> head :: addToEnd e tail
@@ -12,6 +19,12 @@ let rec reverse list =
     match list with
     | head::tail -> (reverse tail) @ [head]
     | [] -> []
+
+let rec for_reverse = 
+    function
+    | [], list -> list
+    | h::l, list -> for_reverse <| (l, concat [h] list)
+let reverse2 x = for_reverse (x, []) 
 
 let rec map func list =
     match list with
@@ -43,6 +56,12 @@ let reverseTEST =
     (reverse [1..23]) = [23..-1..1] &&
     (reverse ["Hello"; "World"]) = ["World"; "Hello"]
 
+let reverse2TEST =
+    (reverse2 []) = [] &&
+    (reverse2 [8]) = [8] &&
+    (reverse2 [1..23]) = [23..-1..1] &&
+    (reverse2 ["Hello"; "World"]) = ["World"; "Hello"]
+
 let mapTEST =
     (map ((+) 1) []) = [] &&
     (map ((+) 1) [1..10]) = [2..11] &&
@@ -59,5 +78,8 @@ let findTEST =
 printfn "Result of addToEndTEST = %A" addToEndTEST
 printfn "Result of concatTEST = %A" concatTEST
 printfn "Result of reverseTEST = %A" reverseTEST
+printfn "Result of reverse2TEST = %A" reverse2TEST
 printfn "Result of mapTEST = %A" mapTEST
 printfn "Result of findTEST = %A" findTEST
+
+Console.ReadKey() |> ignore
