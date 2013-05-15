@@ -8,5 +8,5 @@ let isPrime x =
         if (i > int (sqrt (float x))) then i <- x
     i = x
 
-let ans = {1..2000000} |> Seq.filter isPrime |> Seq.map int64 |> Seq.sum
+let ans = {2..2000000} |> Seq.filter isPrime |> Seq.map int64 |> Seq.sum
 printfn "%A" ans
