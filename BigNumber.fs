@@ -3,8 +3,11 @@
 open System
 
 type BigNumber =
+    //sign of BigNumber; if BigNumber = -9999... then sign = true
     val private sign : bool
+    //value of BigNumber, looks like [3;2;1] for number 123
     val private value : int list
+    //string representation of BigNumber
     val private string : string
 
     new (s:string) = 
@@ -40,22 +43,22 @@ type BigNumber =
       toString l result
      
     //return true if |a| > |b| && inverse = false
-    member private a.absCmpWith (b:BigNumber, inverse:bool) : bool =
-      let rec absCmpWith a b temp =
+    member private a.isGreaterAbs (b:BigNumber, inverse:bool) : bool =
+      let rec isGreaterAbs a b temp =
         match (a, b) with
         | ([], []) -> false
         | ([], _) -> false
         | (_, []) -> true
         | (hA::[], hB::[]) -> if hA < hB then false else if not inverse then hA > hB else temp
-        | (hA::tA, hB::tB) -> absCmpWith tA tB (hA > hB)
-      absCmpWith a.value b.value inverse
+        | (hA::tA, hB::tB) -> isGreaterAbs tA tB (hA > hB)
+      isGreaterAbs a.value b.value inverse
          
     //return true if a > b else false
-    member private a.cmpWith (b:BigNumber) =
+    member private a.isGreater (b:BigNumber) =
       if a.sign && not b.sign then false 
       else if not a.sign && b.sign then true 
-      else if a.sign && b.sign then not (a.absCmpWith (b, false))
-      else (a.absCmpWith (b, false))
+      else if a.sign && b.sign then not (a.isGreaterAbs (b, false))
+      else (a.isGreaterAbs (b, false))
     
     static member private add'(l, transfer) =
       if transfer = 0 then l
@@ -121,18 +124,18 @@ type BigNumber =
       mult b []
 
     static member private add(a:BigNumber, b:BigNumber) = 
-      match a.sign, b.sign with 
-      | (true, false) | (false, true) -> if a.absCmpWith(b, false) then new BigNumber(BigNumber.sub(a.value, b.value), a.sign) 
-                                                                   else new BigNumber(BigNumber.sub(b.value, a.value), b.sign)
-      | _, _ -> new BigNumber(BigNumber.add(a.value, b.value), a.sign) 
+      match a.sign, b.sign, a.isGreaterAbs(b, false) with 
+      | (true, false, true) | (false, true, true) -> new BigNumber(BigNumber.sub(a.value, b.value), a.sign) 
+      | (true, false, false) | (false, true, false) -> new BigNumber(BigNumber.sub(b.value, a.value), b.sign)
+      | _, _, _ -> new BigNumber(BigNumber.add(a.value, b.value), a.sign) 
      
     static member private sub(a:BigNumber, b:BigNumber) = 
-      match a.sign, b.sign with
-      | false, false -> if a.absCmpWith(b, false) then new BigNumber(BigNumber.sub(a.value, b.value), a.sign) 
-                                                  else new BigNumber(BigNumber.sub(b.value, a.value), true) 
-      | false, true | true, false -> new BigNumber(BigNumber.add(a.value, b.value), a.sign) 
-      | true, true -> if a.absCmpWith(b, false) then new BigNumber(BigNumber.sub(b.value, a.value), a.sign) 
-                                                else new BigNumber(BigNumber.sub(b.value, a.value), false) 
+      match a.sign, b.sign, a.isGreaterAbs(b, false) with
+      | false, false, true -> new BigNumber(BigNumber.sub(a.value, b.value), a.sign) 
+      | false, false, false -> new BigNumber(BigNumber.sub(b.value, a.value), true) 
+      | true, true, true -> new BigNumber(BigNumber.sub(b.value, a.value), a.sign) 
+      | true, true, false -> new BigNumber(BigNumber.sub(b.value, a.value), false) 
+      | false, true, _ | true, false, _-> new BigNumber(BigNumber.add(a.value, b.value), a.sign)
     
     static member private mult(a:BigNumber, b:BigNumber) = 
       match a.sign, b.sign with
