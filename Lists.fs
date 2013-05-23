@@ -20,16 +20,19 @@ let rec reverse list =
     | head::tail -> (reverse tail) @ [head]
     | [] -> []
 
-let rec for_reverse = 
+let reverse2 x = 
+  let rec reverse = 
     function
     | [], list -> list
-    | h::l, list -> for_reverse <| (l, concat [h] list)
-let reverse2 x = for_reverse (x, []) 
+    | h::l, list -> reverse <| (l, h::list)
+  reverse (x, [])
 
 let rec map func list =
     match list with
     | head::tail -> (func head) :: (map func tail)
     | [] -> []
+
+let map2 func list = List.fold (fun acc x -> append acc [func x]) [] list
 
 let rec find key list=
     match list with
