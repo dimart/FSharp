@@ -32,7 +32,7 @@ let rec map func list =
     | head::tail -> (func head) :: (map func tail)
     | [] -> []
 
-let map2 func list = List.fold (fun acc x -> append acc [func x]) [] list
+let map2 func list = List.foldBack (fun elem acc -> (func elem)::acc) list []
 
 let rec find key list=
     match list with
@@ -70,6 +70,12 @@ let mapTEST =
     (map ((+) 1) [1..10]) = [2..11] &&
     (map ((*) 10) [1..23]) = [10..10..230] &&
     (map ( (+) "!") ["Hello"; "World"]) = ["!Hello"; "!World"]
+
+let map2TEST =
+    (map2 ((+) 1) []) = [] &&
+    (map2 ((+) 1) [1..10]) = [2..11] &&
+    (map2 ((*) 10) [1..23]) = [10..10..230] &&
+    (map2 ( (+) "!") ["Hello"; "World"]) = ["!Hello"; "!World"]
 
 let findTEST =
     (find ((>) 0) []) = None &&
