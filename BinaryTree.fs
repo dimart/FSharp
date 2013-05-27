@@ -41,12 +41,50 @@ let rec delElem tree x =
       else let min = findMin right
            Node(left, min, delElem right min)
 
+let printSpaces count = for i = 1 to count do printf " "
+let mutable spaces = 0
+
+let rec printSub tree =
+  printSpaces spaces
+  match tree with
+    | Node(Empty, value, Empty) -> printfn "<NULL %A NULL>" value
+                                   spaces <- spaces - 1
+    | Node(left, value, right) -> printfn "(%A" value
+                                  spaces <- spaces + 1
+                                  printSub left
+                                  spaces <- spaces + 1
+                                  printSub right
+                                  printSpaces spaces
+                                  printfn ")"
+                                  spaces <- spaces - 1
+    | Empty -> printfn "<NULL>"
+               spaces <- spaces - 1 
+
+let print tree = 
+    match tree with 
+    | Node (left, value, right) -> printfn "ROOT: %A" value
+                                   spaces <- spaces + 1
+                                   printfn "LEFT:"
+                                   printSub left
+                                   spaces <- spaces + 1
+                                   printfn "RIGHT:"
+                                   printSub right
+    | Empty -> printfn "This tree is empty."
+
 let mutable LemonTree = Empty
 LemonTree <- addElem LemonTree 18
-LemonTree <- addElem LemonTree 42
-LemonTree <- addElem LemonTree 8
+LemonTree <- addElem LemonTree 40
+LemonTree <- addElem LemonTree 45
+LemonTree <- addElem LemonTree 84
+LemonTree <- addElem LemonTree 90
+LemonTree <- addElem LemonTree 81
+LemonTree <- addElem LemonTree 82
 LemonTree <- addElem LemonTree 9
-printfn "%A" LemonTree
+LemonTree <- addElem LemonTree 10
+LemonTree <- addElem LemonTree 7
+
+print LemonTree
+
 printfn "%A" <| findElem LemonTree 19
 LemonTree <- addElem LemonTree 19
 printfn "%A" <| findElem LemonTree 19
