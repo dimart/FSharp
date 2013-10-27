@@ -1,6 +1,6 @@
 ﻿(*
     OOWorld of Elementary Particles with own Coliders
-    Partical--|
+    Particle--|
               |--Fermion--|
               |           |--Quark--|
               |           |         |--uQuark
