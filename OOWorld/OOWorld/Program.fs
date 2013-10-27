@@ -47,116 +47,75 @@ type Particle(name : string, mass : float<MeV/c^2>, charge : float<e>, spin : fl
        let spin         = spin
        let statistics   = stat
        
-       member this.Name       = name
-       member this.Mass       = mass
-       member this.Charge     = charge
-       member this.Spin       = spin
-       member this.Statistic  = statistics
-    end
-
-type Fermion(name : string, mass : float<MeV/c^2>, charge : float<e>, generation : int) =  
-    class 
-       inherit Particle(name, mass, charge, 0.5, "Fermi–Dirac statistics") 
-       let generation = generation
-       member this.Generation = generation
-    end
-
-type Boson(name : string, mass : float<MeV/c^2>, charge : float<e>, spin : float) = 
-    class  
-       inherit Particle(name, mass, charge, spin, "Bose–Einstein statistics") 
-    end
-
-[<AbstractClass>]
-type Hypothetical(name : string, mass : float<MeV/c^2>, charge : float<e>, spin : float, stat : string, theorizedYear : int) =
-    class
-       inherit Particle(name, mass, charge, spin, stat)
-       let theorizedYear = theorizedYear
-       member this.TheorizedYear = theorizedYear
+       member this.Name        = name
+       member this.Mass        = mass
+       member this.Charge      = charge
+       member this.Spin        = spin
+       member this.Statistic   = statistics
        member this.ShowInfo    = printfn "[INFO]\n\
-                                          Type:   Hypothetical\n\
                                           Name:   %A\n\
                                           Mass:   %A MeV/c^2\n\
                                           Charge: %A e\n\
                                           Spin:   %A\n\
-                                          Stat:   %A\n\
-                                          About:  \n%A" 
-                                          name mass charge (this.Spin) (this.Statistic) (this.Description())
+                                          Stat:   %A"
+                                          name mass charge spin stat
+    end
+
+type Fermion(name : string, mass : float<MeV/c^2>, charge : float<e>, generation : int, discovered : int) =  
+    class 
+       inherit Particle(name, mass, charge, 0.5, "Fermi–Dirac statistics") 
+       let generation = generation
+       let discovered = discovered
+
+       member this.Generation = generation      
+       member this.Discovered = discovered                     
+    end
+
+type Boson(name : string, mass : float<MeV/c^2>, charge : float<e>, spin : float, discovered : int) = 
+    class  
+       inherit Particle(name, mass, charge, spin, "Bose–Einstein statistics") 
+       let discovered = discovered
+
+       member this.Discovered = discovered 
+    end
+
+[<AbstractClass>]
+type Hypothetical(name : string, mass : float<MeV/c^2>, charge : float<e>, spin : float, stat : string, theorized : int) =
+    class
+       inherit Particle(name, mass, charge, spin, stat)
+       let theorized = theorized
+
+       member this.Theorized = theorized
        abstract member Description : unit -> string
     end
     
 [<AbstractClass>]
 type Quark(name : string, mass : float<MeV/c^2>, charge : float<e>, generation : int, discovered : int) =
     class
-       inherit Fermion(name, mass, charge, generation)
-       let discovered   = discovered
-       
+       inherit Fermion(name, mass, charge, generation, discovered)
        member this.ColorCharge = true
-       member this.Discovered  = discovered
-       member this.ShowInfo    = printfn "[INFO]\n\
-                                          Type:   Quark\n\
-                                          Name:   %A\n\
-                                          Gen:    %A\n\
-                                          Mass:   %A MeV/c^2\n\
-                                          Charge: %A e\n\
-                                          Spin:   %A\n\
-                                          Stat:   %A\n\
-                                          About:  \n%A\n" 
-                                          name generation mass charge (this.Spin) (this.Statistic) (this.Description())
        abstract member Description : unit -> string
     end
 
 [<AbstractClass>]
 type Lepton(name : string, mass : float<MeV/c^2>, charge : float<e>, generation : int, discovered : int) = 
     class
-       inherit Fermion(name, mass, charge, generation)
-       let discovered   = discovered
-
+       inherit Fermion(name, mass, charge, generation, discovered)
        member this.ColorCharge = false
-       member this.Discovered  = discovered
-       member this.ShowInfo    = printfn "[INFO]\n\
-                                          Type:   Lepton\n\
-                                          Name:   %A\n\
-                                          Gen:    %A\n\
-                                          Mass:   %A MeV/c^2\n\
-                                          Charge: %A e\n\
-                                          Spin:   %A\n\
-                                          Stat:   %A\n\
-                                          About:  \n%A" 
-                                          name generation mass charge (this.Spin) (this.Statistic) (this.Description())
        abstract member Description : unit -> string
     end
 
 [<AbstractClass>]
 type GaugeBoson(name : string, mass : float<MeV/c^2>, charge : float<e>, discovered : int) = 
     class
-       inherit Boson(name, mass, charge, 1.0)
-       member this.Discovered = discovered
-       member this.ShowInfo    = printfn "[INFO]\n\
-                                          Type:   Boson\n\
-                                          Name:   %A\n\
-                                          Mass:   %A MeV/c^2\n\
-                                          Charge: %A e\n\
-                                          Spin:   %A\n\
-                                          Stat:   %A\n\
-                                          About:  \n%A" 
-                                          name mass charge (this.Spin) (this.Statistic) (this.Description())
+       inherit Boson(name, mass, charge, 1.0, discovered)
        abstract member Description : unit -> string
     end
 
 [<AbstractClass>]
 type ScalarBoson(name : string, mass : float<MeV/c^2>, charge : float<e>, discovered : int) = 
     class
-        inherit Boson(name, mass, charge, 0.0)
-        member this.Discovered = discovered
-        member this.ShowInfo   = printfn "[INFO]\n\
-                                          Type:   Boson\n\
-                                          Name:   %A\n\
-                                          Mass:   %A MeV/c^2\n\
-                                          Charge: %A e\n\
-                                          Spin:   %A\n\
-                                          Stat:   %A\n\
-                                          About:  \n%A" 
-                                          name mass charge (this.Spin) (this.Statistic) (this.Description())
+        inherit Boson(name, mass, charge, 0.0, discovered)
         abstract member Description : unit -> string
     end
 //--------------------------------Quarks[BEGIN]----------------------------------------------------
@@ -193,6 +152,7 @@ type bQuark() =
                                    3rd generation of the Down and Charm quarks, all sharing a -1/3 charge \
                                    It was discovered at Fermilab in 1977."
 //--------------------------------Quarks[END]-------------------------------------------------------
+
 //--------------------------------Leptons[BEGIN]----------------------------------------------------
 type Electron() = 
     inherit Lepton("Electron", 0.510998928<MeV/c^2>, -1.0<e>, 1, 1897)
@@ -230,6 +190,7 @@ type TauNeutrino() =
                                    the Tau-neutrino, is extremely difficult to detect. Discovered in 2000, it is about 100 times \
                                    heavier than a muon-neutrino."
 //--------------------------------Leptons[END]-----------------------------------------------------
+
 //--------------------------------Guage Boson[BEGIN]-----------------------------------------------
 type Photon() =
     inherit GaugeBoson("Photon", 0.0<MeV/c^2>, 0.0<e>, 1923)
@@ -263,12 +224,14 @@ type ZBoson() =
                                    decays into other particles. Discovered in 1983, the Z has allowed physicists to further \
                                    study electroweak theory."         
 //-------------------------------Guage Boson[END]--------------------------------------------------
+
 //-------------------------------Scalar Boson[BEGIN]-----------------------------------------------
 type Higgs() =
     inherit ScalarBoson("Higgs Boson", 125300.0<MeV/c^2>, 0.0<e>, 2013)
     override this.Description() = "The Higgs Boson is particle of the Higgs mechanism, which physicists believe will reveal \
                                    how all matter in the universe gets its mass."  
 //-------------------------------Scalar Boson[END]-------------------------------------------------
+
 //-------------------------------Hypothetical[BEGIN]-----------------------------------------------
 type Graviton() = 
     inherit Hypothetical("Graviton", 0.0<MeV/c^2>, 0.0<e>, 2.0, "Bose–Einstein statistics", 1930)
@@ -277,44 +240,40 @@ type Graviton() =
 //-------------------------------Hypothetical[END]-----------------------------------------------
 
 let dq x = (x :> Quark)
-let dl x = (x :> Lepton)
-let dh x = (x :> Hypothetical)
-let dgB x = (x :> GaugeBoson)
-let dsB x = (x :> ScalarBoson)
 
 type switchstate = On | Off
 
 type Collider(name : string) =
     class
-    let name      = name
-    let mutable isOn      = Off
-    let quarks       = [| 
+    let name          = name
+    let mutable state = Off
+    let quarks        = [| 
                           dq(new uQuark()); dq(new dQuark()); 
                           dq(new sQuark()); dq(new cQuark());
                           dq(new tQuark()); dq(new bQuark()) 
-                       |]
+                        |]
 
     member this.Name = name
     member this.SwitchOn() = 
         printfn "Collider %A starts working..." name 
         printfn "Initialization of all systems... Done\n"
-        isOn <- match isOn with On -> Off | Off -> On 
+        state <- match state with On -> Off | Off -> On 
 
     member this.CatchQ() = 
         let rnd = System.Random()
         quarks.[rnd.Next(0,quarks.Length)] 
 
     member this.GetLucky() = 
-        match isOn with
+        match state with
         | On ->  printfn "Let's find some new particles!"
         | Off -> printfn "You'll be more lucky if you turn on the collider first!\n\
                           But of course we can do it for you... lazy little scientist." 
-                 isOn = On |> ignore
+                 state = On |> ignore
         let rnd = System.Random()
         match rnd.Next(0,1000000) with
         | 1       -> printfn "Yeah, we found something interesting! Nobel Prize waiting for you!"
                      new Graviton() :> Particle
-        | _       -> printfn "Electron...again" 
+        | _       -> printfn "It's the Electron...again" 
                      new Electron() :> Particle
     end
 //-----------------
@@ -325,8 +284,9 @@ myHomeCollider.SwitchOn()
 let quark = myHomeCollider.CatchQ()
 printfn "We caught: %A" quark.Name
 quark.ShowInfo
+printfn "About:  %A\n" <| quark.Description()
 
 let particle = myHomeCollider.GetLucky()
-particle.Name |> printfn "We found: %A"
+particle.Name |> printfn "We caught: %A"
 
 Console.ReadKey() |> ignore
