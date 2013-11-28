@@ -31,6 +31,7 @@ type WeatherData() as this =
         luminosity <- port.ReadLine()
         (x :> ISubject).notifyObservers
         ()
+    member x.detachMe(o) = (x :> ISubject).removeObserver(o)
     end
 
 type BasicLookDisplay(subject : ISubject) as this =
@@ -49,12 +50,18 @@ type BasicLookDisplay(subject : ISubject) as this =
 type AdvancedLookDisplay(subject : ISubject) as this =
     let form                = new Form(Text = "Display")
     let mutable weatherData = null
+    let btnOff              = new Button(Text = "Off", Left = 70)
+    let btnOn               = new Button(Text = "On")
     do
+        form.Controls.Add(btnOn)
+        form.Controls.Add(btnOff)
         form.Show()
         weatherData <- subject
-        weatherData.registerObserver(this)
+        btnOn.Click.AddHandler (new EventHandler(fun _ _ -> weatherData.registerObserver(this)))
+        btnOff.Click.AddHandler(new EventHandler(fun _ _ -> weatherData.removeObserver(this); form.BackColor <- Color.FromArgb(255,255,255)))
     interface IObserver with 
-        member x.update(data) = form.BackColor <- Color.FromArgb(0, 0, ((int (data) + 50) % 255))
+        member x.update(data) = form.BackColor <- Color.FromArgb(0, 0, ((int (data)) % 255))
+      
 
 [<EntryPoint>]
 let main _ =
