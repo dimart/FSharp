@@ -38,5 +38,5 @@ type EmailTests() =
     member x.Corrects()   = corrects |> List.iter (fun e -> emailCheck.parseEmail(e) |> should be True)
 
     [<Test>]
-    member x.Incorrects() = corrects |> List.iter (fun e -> emailCheck.parseEmail(e) |> should be True)
+    member x.Incorrects() = incorrects |> List.iter (fun e -> emailCheck.parseEmail(e) |> should be False)
     
