@@ -1,5 +1,6 @@
 ﻿open System
 open System.Windows.Forms
+open System.Text.RegularExpressions
 open System.Drawing
 open System.IO
 open System.Net
@@ -55,7 +56,12 @@ type WeatherMainForm(w:int, h:int) as this =
     class
         inherit Form(Text = "Saint-Petersburg Weather", Width = w, Height = h) 
         let weather  = new Weather() 
-        let bitmap   = new Bitmap(Directory.GetCurrentDirectory() + "\\back01.jpg")
+        //TODO add exceptions
+        let request  = WebRequest.Create("http://s5.goodfon.ru/crop/576328.jpg?flag=false&w=500&h=283&x=0&y=0&grayscale=&r=0.2441&resolution=480x272");
+        let response = request.GetResponse();
+        let stream   = response.GetResponseStream();
+        //
+        let bitmap   = new Bitmap(stream)
         let cityName = new Label(
                                   Text = "Saint-Petersburg", 
                                   Font = new Font("Monotype Corsiva", 27.75F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(204))), 
