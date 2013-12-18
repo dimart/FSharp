@@ -245,6 +245,7 @@ type switchstate = On | Off
 
 type Collider(name : string) =
     class
+    let rnd = System.Random()
     let name          = name
     let mutable state = Off
     let quarks        = [| 
@@ -260,7 +261,6 @@ type Collider(name : string) =
         state <- match state with On -> Off | Off -> On 
 
     member this.CatchQ() = 
-        let rnd = System.Random()
         quarks.[rnd.Next(0,quarks.Length)] 
 
     member this.GetLucky() = 
@@ -268,8 +268,7 @@ type Collider(name : string) =
         | On ->  printfn "Let's find some new particles!"
         | Off -> printfn "You'll be more lucky if you turn on the collider first!\n\
                           But of course we can do it for you... lazy little scientist." 
-                 state = On |> ignore
-        let rnd = System.Random()
+                 state <- On 
         match rnd.Next(0,1000000) with
         | 1       -> printfn "Yeah, we found something interesting! Nobel Prize waiting for you!"
                      new Graviton() :> Particle
