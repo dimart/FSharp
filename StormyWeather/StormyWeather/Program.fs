@@ -142,15 +142,14 @@ type WeatherMainForm(w:int, h:int) as this =
     end
 
 //Test
-//type ProgressForm() as this =
-//    inherit Form(Text = "Wait, please, sir!", Width = 250, Height = 100)
-//    let pr = new ProgressBar()
-//    do
-//        this.Controls.Add(pr)
-//        this.Show()
+type ProgressForm() as this =
+    inherit Form(Text = "Wait, please, sir!", Width = 250, Height = 100)
+    let pr = new ProgressBar()
+    do
+        this.Controls.Add(pr)
+        this.Show()
 //    
 //let ws = new Weather()
-//let p  = new ProgressForm()
 //let b  = new BackgroundWorker()
 //
 //type exec = delegate of unit -> int
@@ -200,6 +199,7 @@ let DownloadImgs = try
 let CheckForRequiredMaterials() =
     match (not FilesExist) with
     | true  -> Directory.CreateDirectory("img") |> ignore
+//               let p  = new ProgressForm()
                DownloadImgs
     | false -> ()
 
@@ -208,6 +208,6 @@ let CheckForRequiredMaterials() =
 (if IsThereInternetConnection() 
     then CheckForRequiredMaterials() |> ignore
          MessageBox.Show("All right!") 
-    else MessageBox.Show("Check your Internet connetion.", "Internet connection needed", MessageBoxButtons.OK, MessageBoxIcon.Error))
+    else MessageBox.Show("Check your Internet connetion.", "Internet connection needed", MessageBoxButtons.OK, MessageBoxIcon.Error) )
 |> ignore
 #endif
