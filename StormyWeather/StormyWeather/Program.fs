@@ -13,7 +13,7 @@ open FSharp.Data
 open System.ComponentModel
 open System.Diagnostics
 
-let  updateTimeMS    = 60000.0
+let  updateTimeMS    = 1000.0
 let  wclient         = new WebClient()
 let  imgLinks        = [| ("https://www.dropbox.com/s/ivt1ej3673ql7fa/weather-clear.jpg?dl=1",            "./img/weather-clear.jpg");
                           ("https://www.dropbox.com/s/7j92yxq69xqtewy/weather-clear-night.jpg?dl=1",      "./img/weather-clear-night.jpg");
@@ -32,9 +32,7 @@ type SetTextCallback = delegate of string -> unit
 
 type IWeatherObserver = 
     abstract member updateTemp       : int    -> unit
-    abstract member updateWindSpeed  : int    -> unit
     abstract member updateWCondition : string -> unit
-    abstract member updateWindDirect : string -> unit 
 
 type IWeather =
     abstract member registerObserver : IWeatherObserver -> unit
@@ -56,22 +54,53 @@ type Weather() as this =
             member x.registerObserver(o) = observers <- o :: observers
             member x.removeObserver(o)   = observers <- List.filter (fun x -> x <> o)  observers 
             member x.notifyObservers     = List.iter (fun (o:IWeatherObserver) -> o.updateTemp(temp);
-                                                                                  o.updateWindSpeed(windSpeed);
-                                                                                  o.updateWindDirect(windDirect);
                                                                                   o.updateWCondition(wCondition);
                                                                                   ) observers
         member private x.Update _ = 
             temp        <- weatherXml.GetSample().Fact.Temperature.Value
-            windSpeed   <- Convert.ToInt32(weatherXml.GetSample().Fact.WindSpeed)
             wCondition  <- weatherXml.GetSample().Fact.WeatherCondition.Code
-            windDirect  <- weatherXml.GetSample().Fact.WindDirection
             (x :> IWeather).notifyObservers
             ()
         member x.TESTGetData() =
             temp
     end
 
-//Test for internet connection
+let labelFactory( text     : string, fontName  : string,
+                  fontSize : Single, fontStyle : FontStyle,
+                  xL        : int   , yL         : int,
+                  xS        : int   , yS         : int     ) = new Label(Text    = text, ForeColor = Color.White, 
+                                                                         Font      = new Font(fontName, fontSize, fontStyle, GraphicsUnit.Point, ((byte)(204))),
+                                                                         Location  = new Point(xL,yL),
+                                                                         Size      = new Size(xS,yS),
+                                                                         BackColor = Color.Transparent)
+
+type WeatherMainForm() as this =
+    class
+        inherit Form(Text = "Saint-Petersburg Weather", Width = 480, Height = 300) 
+        let weather    = new Weather() 
+        let cityName   = labelFactory("Saint-Petersburg", "Monotype Corsiva", 27.75F, FontStyle.Italic, 13, 5, 241, 45)
+        let temp       = labelFactory("0 C", "Times New Roman", 48.0F, FontStyle.Regular, 8, 45, 123, 73)
+        let wCondition = labelFactory("", "Times New Roman", 15.75F, FontStyle.Regular, 17, 137, 120, 23)
+        do
+              (weather :> IWeather).registerObserver(this)
+              this.FormBorderStyle <- FormBorderStyle.None
+              this.GotFocus.AddHandler(new EventHandler(fun _ _ -> (this.FormBorderStyle <- FormBorderStyle.FixedSingle) |> ignore))
+              this.LostFocus.AddHandler(new EventHandler(fun _ _ -> (this.FormBorderStyle <- FormBorderStyle.None) |> ignore))
+              this.MaximizeBox <- false
+              this.Controls.Add(temp) 
+              this.Controls.Add(cityName)
+              this.Controls.Add(wCondition)
+              this.BackgroundImage <- new Bitmap("./img/weather-showers.jpg")
+        interface IWeatherObserver with 
+            member x.updateTemp(data)       = if (temp.InvokeRequired) 
+                                                then temp.Invoke(new SetIntCallback((x:>IWeatherObserver).updateTemp), data) |> ignore 
+                                                else temp.Text <- (data.ToString() + " C")
+            member x.updateWCondition(data) = if (wCondition.InvokeRequired) 
+                                              then wCondition.Invoke(new SetTextCallback((x:>IWeatherObserver).updateWCondition), data) |> ignore 
+                                              else wCondition.Text <- data
+    end
+
+//Test for the Internet connection
 let IsThereInternetConnection() = 
     try
         using (wclient.OpenRead("http://www.google.com")) (fun _ -> true)
@@ -82,87 +111,6 @@ let IsThereInternetConnection() =
 let FilesExist() = Directory.Exists("img") 
                    && Array.fold (fun acc (_, fname) -> acc && IO.File.Exists(fname)) true imgLinks
 
-type WeatherMainForm() as this =
-    class
-        inherit Form(Text = "Saint-Petersburg Weather", Width = 480, Height = 272) 
-        let weather  = new Weather() 
-        //TODO add exceptions
-        let request  = WebRequest.Create("http://s5.goodfon.ru/crop/576328.jpg?flag=false&w=500&h=283&x=0&y=0&grayscale=&r=0.2441&resolution=480x272");
-        let response = request.GetResponse();
-        let stream   = response.GetResponseStream();
-        //
-        let bitmap   = new Bitmap(stream)
-        let cityName = new Label(
-                                  Text = "Saint-Petersburg", 
-                                  Font = new Font("Monotype Corsiva", 27.75F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(204))), 
-                                  Location = new Point(13, 5),
-                                  Size = new System.Drawing.Size(241, 45),
-                                  BackColor = System.Drawing.Color.Transparent
-                                )
-        let temp     = new Label(
-                                  Text = "0 C", 
-                                  Font = new Font("Times New Roman", 48.0F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0))), 
-                                  Location = new Point(8, 45),
-                                  Size = new System.Drawing.Size(123, 73),
-                                  BackColor = System.Drawing.Color.Transparent
-                                )
-                                  
-        let windLabel = new Label(
-                                  Text = "Wind:", 
-                                  Location = new Point(17,115), 
-                                  Font = new Font("Times New Roman", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204))),
-                                  Size = new System.Drawing.Size(62, 23),
-                                  BackColor = System.Drawing.Color.Transparent
-                                  )
-        let windSpeed = new Label(
-                                  Text = "0 m/s", 
-                                  Location = new Point(80, 115), 
-                                  Font = new Font("Times New Roman", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204))),
-                                  Size = new System.Drawing.Size(57, 23),
-                                  BackColor = System.Drawing.Color.Transparent
-                                  )
-        let windDirect = new Label(
-                                  Text = "", 
-                                  Location = new Point(137, 115), 
-                                  Font = new Font("Times New Roman", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204))),
-                                  Size = new System.Drawing.Size(48, 23),
-                                  BackColor = System.Drawing.Color.Transparent
-                                  )
-        let wCondition = new Label(
-                                  Text = "", 
-                                  Location = new Point(17, 137), 
-                                  Font = new Font("Times New Roman", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204))),
-                                  Size = new System.Drawing.Size(120, 23),
-                                  BackColor = System.Drawing.Color.Transparent
-                                  )
-        do
-              (weather :> IWeather).registerObserver(this)
-              this.FormBorderStyle <- FormBorderStyle.None
-              this.GotFocus.AddHandler(new EventHandler(fun _ _ -> (this.FormBorderStyle <- FormBorderStyle.FixedSingle) |> ignore))
-              this.LostFocus.AddHandler(new EventHandler(fun _ _ -> (this.FormBorderStyle <- FormBorderStyle.None) |> ignore))
-              this.MaximizeBox <- false
-              this.Controls.Add(temp) 
-              this.Controls.Add(cityName)
-              this.Controls.Add(windLabel)
-              this.Controls.Add(windSpeed)
-              this.Controls.Add(windDirect)
-              this.Controls.Add(wCondition)
-              this.BackgroundImage <- bitmap
-        interface IWeatherObserver with 
-            member x.updateTemp(data)       = if (temp.InvokeRequired) 
-                                                then temp.Invoke(new SetIntCallback((x:>IWeatherObserver).updateTemp), data) |> ignore 
-                                                else temp.Text <- (data.ToString() + " C")
-            member x.updateWindSpeed(data)  = if (windSpeed.InvokeRequired) 
-                                              then windSpeed.Invoke(new SetIntCallback((x:>IWeatherObserver).updateWindSpeed), data) |> ignore 
-                                              else windSpeed.Text <- (data.ToString() + " m/s")
-            member x.updateWindDirect(data) = if (windDirect.InvokeRequired) 
-                                              then windDirect.Invoke(new SetTextCallback((x:>IWeatherObserver).updateWindDirect), data) |> ignore 
-                                              else windDirect.Text <- data
-            member x.updateWCondition(data) = if (windDirect.InvokeRequired) 
-                                              then wCondition.Invoke(new SetTextCallback((x:>IWeatherObserver).updateWCondition), data) |> ignore 
-                                              else wCondition.Text <- data
-    end
-
 let downloadImg i = (fun (uri, fname) -> wclient.DownloadFileAsync(new Uri(uri), fname)) imgLinks.[i]
   
 type InitForm() as this =
@@ -170,6 +118,7 @@ type InitForm() as this =
         inherit Form(Text = "Initialization...", Width = 364, Height = 130)
         let pb = new ProgressBar()
         let statusLabel = new Label()
+        let wf          = new WeatherMainForm()
         let mutable i = 0
         do
             wclient.DownloadProgressChanged.AddHandler(fun o e -> pb.Value <- e.ProgressPercentage)
@@ -177,21 +126,20 @@ type InitForm() as this =
                                                                   if i <> imgLinks.Length 
                                                                   then downloadImg i;
                                                                        statusLabel.Text <- "Download images: " + (i+1).ToString() + " / " + imgLinks.Length.ToString();
-                                                                  else statusLabel.Text <- "Done!"; this.Visible <- false; Application.Run(new WeatherMainForm()))
-        //ProgressBar settings
+                                                                  else statusLabel.Text <- "Done!"; this.Visible <- false; wf.Show())
+            //ProgressBar settings
             pb.ForeColor <- Color.LimeGreen
             pb.Location  <- Point(40,40)
             pb.Size      <- Size(255, 25)
             pb.Style     <- ProgressBarStyle.Continuous
             pb.TabIndex  <- 0
-       //Status Label settings
+            //Status Label settings
             statusLabel.Font <- new Font("Times New Roman", 12.0F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)))
             statusLabel.Location <- new Point(34, 18)
-            statusLabel.Name <- "label1";
             statusLabel.Size <- new System.Drawing.Size(250, 21);
             statusLabel.TabIndex <- 1;
             statusLabel.Text <- "";
-       //Add controls to the form
+            //Add controls to the form
             this.Controls.Add(pb)
             this.Controls.Add(statusLabel)
             this.ControlBox      <- false;
@@ -199,9 +147,7 @@ type InitForm() as this =
             this.StartPosition   <- FormStartPosition.CenterScreen;
             if not (FilesExist()) then Directory.CreateDirectory("img") |> ignore
                                        downloadImg 0; statusLabel.Text <- "Download images: " + (i+1).ToString() + " / " + imgLinks.Length.ToString();
-                                  else this.Visible <- false; 
-                                       Application.Run(new WeatherMainForm())
-                                       this.Close()
+                                  else this.VisibleChanged.AddHandler(fun _ _ -> this.Visible <- false); wf.Show()
     end
 
 [<EntryPoint>]
@@ -210,7 +156,6 @@ match IsThereInternetConnection() with
 | true  -> try Application.Run(new InitForm()) with :? ObjectDisposedException as ex -> ()
 | false -> ((MessageBox.Show("Check your Internet connetion.", "Internet connection needed", 
                               MessageBoxButtons.OK, MessageBoxIcon.Error))) |> ignore; 
-
 
 //let b  = new BackgroundWorker()
 //
