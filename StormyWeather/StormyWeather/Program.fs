@@ -13,8 +13,19 @@ open FSharp.Data
 open System.ComponentModel
 open System.Diagnostics
 
-let  updateTimeMS    = 5000.0
+let  updateTimeMS    = 60000.0
 let  wclient         = new WebClient()
+let  imgLinks        = [| ("https://www.dropbox.com/s/ivt1ej3673ql7fa/weather-clear.jpg?dl=1",            "./img/weather-clear.jpg");
+                          ("https://www.dropbox.com/s/7j92yxq69xqtewy/weather-clear-night.jpg?dl=1",      "./img/weather-clear-night.jpg");
+                          ("https://www.dropbox.com/s/njtmgehmc2gro2x/weather-few-clouds.jpg?dl=1",       "./img/weather-few-clouds.jpg");
+                          ("https://www.dropbox.com/s/ghbhh1anon0gwld/weather-few-clouds-night.jpg?dl=1", "./img/weather-few-clouds-night.jpg");
+                          ("https://www.dropbox.com/s/5dnhu02r0gzgn6s/weather-fog.jpg?dl=1",              "./img/weather-fog.jpg");
+                          ("https://www.dropbox.com/s/naddjzowxbsf2b0/weather-overcast.jpg?dl=1",         "./img/weather-overcast.jpg");
+                          ("https://www.dropbox.com/s/7eaf9rzwt93bl8r/weather-showers.jpg?dl=1",          "./img/weather-showers.jpg");
+                          ("https://www.dropbox.com/s/xs2zlncbobdd4gb/weather-snow.jpg?dl=1",             "./img/weather-snow.jpg");
+                          ("https://www.dropbox.com/s/qixtjpm0mk3zavg/weather-storm.jpg?dl=1",            "./img/weather-storm.jpg")
+                       |]
+
 type weatherXml      = XmlProvider<"http://export.yandex.ru/weather-ng/forecasts/26063.xml">
 type SetIntCallback  = delegate of int -> unit
 type SetTextCallback = delegate of string -> unit
@@ -60,9 +71,20 @@ type Weather() as this =
             temp
     end
 
-type WeatherMainForm(w:int, h:int) as this =
+//Test for internet connection
+let IsThereInternetConnection() = 
+    try
+        using (wclient.OpenRead("http://www.google.com")) (fun _ -> true)
+    with
+        | :? System.Net.WebException as ex -> false
+
+//Check for required materials (images, pics)   
+let FilesExist() = Directory.Exists("img") 
+                   && Array.fold (fun acc (_, fname) -> acc && IO.File.Exists(fname)) true imgLinks
+
+type WeatherMainForm() as this =
     class
-        inherit Form(Text = "Saint-Petersburg Weather", Width = w, Height = h) 
+        inherit Form(Text = "Saint-Petersburg Weather", Width = 480, Height = 272) 
         let weather  = new Weather() 
         //TODO add exceptions
         let request  = WebRequest.Create("http://s5.goodfon.ru/crop/576328.jpg?flag=false&w=500&h=283&x=0&y=0&grayscale=&r=0.2441&resolution=480x272");
@@ -141,15 +163,55 @@ type WeatherMainForm(w:int, h:int) as this =
                                               else wCondition.Text <- data
     end
 
-//Test
-type ProgressForm() as this =
-    inherit Form(Text = "Wait, please, sir!", Width = 250, Height = 100)
-    let pr = new ProgressBar()
-    do
-        this.Controls.Add(pr)
-        this.Show()
-//    
-//let ws = new Weather()
+let downloadImg i = (fun (uri, fname) -> wclient.DownloadFileAsync(new Uri(uri), fname)) imgLinks.[i]
+  
+type InitForm() as this =
+    class
+        inherit Form(Text = "Initialization...", Width = 364, Height = 130)
+        let pb = new ProgressBar()
+        let statusLabel = new Label()
+        let mutable i = 0
+        do
+            wclient.DownloadProgressChanged.AddHandler(fun o e -> pb.Value <- e.ProgressPercentage)
+            wclient.DownloadFileCompleted.AddHandler  (fun o e -> pb.Value <- 0; i <- i + 1; 
+                                                                  if i <> imgLinks.Length 
+                                                                  then downloadImg i;
+                                                                       statusLabel.Text <- "Download images: " + (i+1).ToString() + " / " + imgLinks.Length.ToString();
+                                                                  else statusLabel.Text <- "Done!"; this.Visible <- false; Application.Run(new WeatherMainForm()))
+        //ProgressBar settings
+            pb.ForeColor <- Color.LimeGreen
+            pb.Location  <- Point(40,40)
+            pb.Size      <- Size(255, 25)
+            pb.Style     <- ProgressBarStyle.Continuous
+            pb.TabIndex  <- 0
+       //Status Label settings
+            statusLabel.Font <- new Font("Times New Roman", 12.0F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)))
+            statusLabel.Location <- new Point(34, 18)
+            statusLabel.Name <- "label1";
+            statusLabel.Size <- new System.Drawing.Size(250, 21);
+            statusLabel.TabIndex <- 1;
+            statusLabel.Text <- "";
+       //Add controls to the form
+            this.Controls.Add(pb)
+            this.Controls.Add(statusLabel)
+            this.ControlBox      <- false;
+            this.FormBorderStyle <- FormBorderStyle.FixedSingle;
+            this.StartPosition   <- FormStartPosition.CenterScreen;
+            if not (FilesExist()) then Directory.CreateDirectory("img") |> ignore
+                                       downloadImg 0; statusLabel.Text <- "Download images: " + (i+1).ToString() + " / " + imgLinks.Length.ToString();
+                                  else this.Visible <- false; 
+                                       Application.Run(new WeatherMainForm())
+                                       this.Close()
+    end
+
+[<EntryPoint>]
+[<STAThread>]
+match IsThereInternetConnection() with
+| true  -> try Application.Run(new InitForm()) with :? ObjectDisposedException as ex -> ()
+| false -> ((MessageBox.Show("Check your Internet connetion.", "Internet connection needed", 
+                              MessageBoxButtons.OK, MessageBoxIcon.Error))) |> ignore; 
+
+
 //let b  = new BackgroundWorker()
 //
 //type exec = delegate of unit -> int
@@ -162,52 +224,3 @@ type ProgressForm() as this =
 //                  )
 //b.DoWork.Add(fun _ -> a.Invoke() |> ignore)
 //b.RunWorkerCompleted.Add(fun _ -> p.Close())
-
-
-//Test for internet connection
-let IsThereInternetConnection() = 
-    try
-        using (wclient.OpenRead("http://www.google.com")) (fun _ -> true)
-    with
-        | :? System.Net.WebException as ex -> false
-
-//Check for required materials (images, pics)   
-let FilesExist   = Directory.Exists("img") 
-                   && IO.File.Exists("./img/weather-clear.jpg") 
-                   && IO.File.Exists("./img/weather-clear-night.jpg") 
-                   && IO.File.Exists("./img/weather-few-clouds.jpg") 
-                   && IO.File.Exists("./img/weather-few-clouds-night.jpg")
-                   && IO.File.Exists("./img/weather-fog.jpg") 
-                   && IO.File.Exists("./img/weather-overcast.jpg")  
-                   && IO.File.Exists("./img/weather-showers.jpg") 
-                   && IO.File.Exists("./img/weather-snow.jpg")  
-                   && IO.File.Exists("./img/weather-storm.jpg")  
-
-let DownloadImgs = try
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/ivt1ej3673ql7fa/weather-clear.jpg?dl=1"), "./img/weather-clear.jpg")
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/7j92yxq69xqtewy/weather-clear-night.jpg?dl=1"), "./img/weather-clear-night.jpg")
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/njtmgehmc2gro2x/weather-few-clouds.jpg?dl=1"), "./img/weather-few-clouds.jpg")
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/ghbhh1anon0gwld/weather-few-clouds-night.jpg?dl=1"), "./img/weather-few-clouds-night.jpg")
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/5dnhu02r0gzgn6s/weather-fog.jpg?dl=1"), "./img/weather-fog.jpg")
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/naddjzowxbsf2b0/weather-overcast.jpg?dl=1"), "./img/weather-overcast.jpg")
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/7eaf9rzwt93bl8r/weather-showers.jpg?dl=1"), "./img/weather-showers.jpg")
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/xs2zlncbobdd4gb/weather-snow.jpg?dl=1"), "./img/weather-snow.jpg")
-                    wclient.DownloadFile(new Uri("https://www.dropbox.com/s/qixtjpm0mk3zavg/weather-storm.jpg?dl=1"), "./img/weather-storm.jpg")
-                   with
-                    | :? System.Net.WebException as ex -> failwith("Smth goes wrong...")
-
-let CheckForRequiredMaterials() =
-    match (not FilesExist) with
-    | true  -> Directory.CreateDirectory("img") |> ignore
-//               let p  = new ProgressForm()
-               DownloadImgs
-    | false -> ()
-
-#if COMPILED
-[<STAThread()>]
-(if IsThereInternetConnection() 
-    then CheckForRequiredMaterials() |> ignore
-         MessageBox.Show("All right!") 
-    else MessageBox.Show("Check your Internet connetion.", "Internet connection needed", MessageBoxButtons.OK, MessageBoxIcon.Error) )
-|> ignore
-#endif
