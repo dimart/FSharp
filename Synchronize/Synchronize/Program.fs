@@ -6,7 +6,8 @@ let mutable q = [|for i in 0 .. (processes - 1) -> false|]
 
 let printProcess(i : int) =
     lock q ( fun _ -> q.[i-1] <- true
-                      printfn "It's process №%A" i
+                      if (Array.fold (fun a e -> a && e) true q.[0..i-1])
+                      then printfn "It's process №%A" i
            )
 
 let asyncProcess(i : int) = 
