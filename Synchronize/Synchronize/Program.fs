@@ -5,13 +5,13 @@ let rnd       = new Random()
 let mutable q = [|for i in 0 .. (processes - 1) -> false|]
 
 let printProcess(i : int) =
-    lock q ( fun _ -> q.[i-1] <- true
-                      if (Array.fold (fun a e -> a && e) true q.[0..i-1])
+    lock q ( fun _ -> q.[i] <- true
+                      if (Array.fold (fun a e -> a && e) true q.[0..i])
                       then printfn "Finished process №%A" i
                            if i < processes 
-                           then let mutable j = i
+                           then let mutable j = i + 1
                                 while (j < processes && q.[j]) do
-                                printfn "Finished process №%A" (j + 1)
+                                printfn "Finished process №%A" j
                                 j <- j + 1
            )
 
@@ -23,7 +23,7 @@ let asyncProcess(i : int) =
         printProcess i   
     }
 
-let asyncProcesses = [for i in 1 .. processes -> asyncProcess(i)]     
+let asyncProcesses = [for i in 0 .. (processes - 1) -> asyncProcess(i)]     
 
 [<EntryPoint>]
 let main _ =
