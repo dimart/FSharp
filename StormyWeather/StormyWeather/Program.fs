@@ -61,7 +61,7 @@ type Weather(cityName : string) as this =
         member private x.Update _ = 
             match cityName with
             | "Saint-Petersburg" -> try x.UpdateSPB with e -> MessageBox.Show(e.Message) |> ignore
-            | "Moscow" -> x.UpdateMSC
+            | "Moscow" -> try x.UpdateMSC with e -> MessageBox.Show(e.Message) |> ignore
             | _        -> failwith "I don't know this city."
             (x :> IWeather).notifyObservers
             ()
