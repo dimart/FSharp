@@ -50,14 +50,6 @@ type Weather(cityName : string) as this =
             member x.notifyObservers     = List.iter (fun (o:IWeatherObserver) -> o.updateTemp(temp);
                                                                                   o.updateWCondition(wCondition);
                                                                                   ) observers
-        member private x.Update _ = 
-            match cityName with
-            | "Saint-Petersburg" -> x.UpdateSPB
-            | "Moscow" -> x.UpdateMSC
-            | _        -> failwith "I don't know this city."
-            (x :> IWeather).notifyObservers
-            ()
-
         member private x.UpdateSPB = 
             temp        <- SaintPbXml.GetSample().Fact.Temperature.Value
             wCondition  <- SaintPbXml.GetSample().Fact.WeatherCondition.Code
@@ -65,6 +57,15 @@ type Weather(cityName : string) as this =
         member private x.UpdateMSC = 
             temp        <- MoscowXml.GetSample().Fact.Temperature.Value
             wCondition  <- MoscowXml.GetSample().Fact.WeatherCondition.Code
+
+        member private x.Update _ = 
+            match cityName with
+            | "Saint-Petersburg" -> try x.UpdateSPB with e -> MessageBox.Show(e.Message) |> ignore
+            | "Moscow" -> x.UpdateMSC
+            | _        -> failwith "I don't know this city."
+            (x :> IWeather).notifyObservers
+            ()
+
         member x.WCondition = wCondition
         member x.Temp       = temp
     end
@@ -88,6 +89,7 @@ type WeatherMainForm(cityName : string) as this =
         let temp       = labelFactory("0 C", "Times New Roman", 48.0F, FontStyle.Regular, 8, 45, 123, 73)
         let wCondition = labelFactory("", "Times New Roman", 15.75F, FontStyle.Regular, 17, 137, 120, 23)
         do
+              this.Closing.AddHandler(fun _ _ -> Application.Exit())
               this.FormBorderStyle <- FormBorderStyle.None
               this.GotFocus.AddHandler(new EventHandler(fun _ _ -> (this.FormBorderStyle <- FormBorderStyle.FixedSingle) |> ignore))
               this.LostFocus.AddHandler(new EventHandler(fun _ _ -> (this.FormBorderStyle <- FormBorderStyle.None) |> ignore))
@@ -194,7 +196,10 @@ type InitForm() as this =
 
 [<EntryPoint>]
 [<STAThread>]
-match IsThereInternetConnection() with
-| true  -> Application.Run(new InitForm()) 
-| false -> ((MessageBox.Show("Check your Internet connetion.", "Internet connection needed", 
+match IO.File.Exists("./FSharp.Data.dll") with
+| false -> MessageBox.Show("Запуск невозможен: отсутствует FSharp.Data.dll", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+| _ -> 
+  match IsThereInternetConnection() with
+  | true  -> Application.Run(new InitForm()) 
+  | false -> ((MessageBox.Show("Check your Internet connetion.", "Internet connection needed", 
                               MessageBoxButtons.OK, MessageBoxIcon.Error))) |> ignore; 
