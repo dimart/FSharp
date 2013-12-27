@@ -1,4 +1,6 @@
-﻿open System
+﻿//Do not compile under fsc v3.1
+
+open System
 open System.Windows.Forms
 open System.Drawing
 open System.IO
@@ -61,7 +63,7 @@ type Weather(cityName : string) as this =
         member private x.Update _ = 
             match cityName with
             | "Saint-Petersburg" -> try x.UpdateSPB with e -> MessageBox.Show(e.Message) |> ignore
-            | "Moscow" -> try x.UpdateMSC with e -> MessageBox.Show(e.Message) |> ignore
+            | "Moscow"           -> try x.UpdateMSC with e -> MessageBox.Show(e.Message) |> ignore
             | _        -> failwith "I don't know this city."
             (x :> IWeather).notifyObservers
             ()
