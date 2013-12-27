@@ -196,7 +196,7 @@ type InitForm() as this =
 
 [<EntryPoint>]
 [<STAThread>]
-match IO.File.Exists("./FSharp.Data.dll") with
+match IO.File.Exists("./FSharp.Data.dll") || IO.File.Exists("./../../../packages/FSharp.Data.1.1.10/lib/net40/FSharp.Data.dll") with
 | false -> MessageBox.Show("Запуск невозможен: отсутствует FSharp.Data.dll", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 | _ -> 
   match IsThereInternetConnection() with
